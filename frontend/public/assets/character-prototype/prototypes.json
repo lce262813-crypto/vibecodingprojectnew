@@ -1,0 +1,183 @@
+[
+  {
+    "id": "rage-fatigue",
+    "name": "부글꾸벅",
+    "seed": 71030,
+    "body": {
+      "template_id": "wide",
+      "palette_id": "coral",
+      "color": "#F8877E"
+    },
+    "expression": {
+      "eyebrow_id": "angry",
+      "eye_id": "half",
+      "mouth_id": "crooked"
+    },
+    "emotion": {
+      "primary": {
+        "key": "anger",
+        "intensity": 70
+      },
+      "secondary": {
+        "key": "fatigue",
+        "intensity": 30
+      },
+      "detail_state": "pressure"
+    },
+    "decoration": {
+      "part_id": "coffee",
+      "anchor": "right_hand"
+    },
+    "effect_parts": [
+      "sweat"
+    ],
+    "mutation": {
+      "part_id": null
+    },
+    "description": "분노 눈썹과 피로한 반눈을 결합한 캐릭터"
+  },
+  {
+    "id": "flutter-anxiety",
+    "name": "콩닥초조",
+    "seed": 65350,
+    "body": {
+      "template_id": "basic",
+      "palette_id": "pink",
+      "color": "#F8BCD0"
+    },
+    "expression": {
+      "eyebrow_id": "worried",
+      "eye_id": "sparkle",
+      "mouth_id": "small_smile"
+    },
+    "emotion": {
+      "primary": {
+        "key": "excitement",
+        "intensity": 65
+      },
+      "secondary": {
+        "key": "anxiety",
+        "intensity": 35
+      },
+      "detail_state": "anticipation"
+    },
+    "decoration": {
+      "part_id": "hearts",
+      "anchor": "top"
+    },
+    "effect_parts": [
+      "sweat"
+    ],
+    "mutation": {
+      "part_id": "single_spot"
+    },
+    "description": "반짝이는 눈과 걱정 눈썹, 식은땀을 함께 표현"
+  },
+  {
+    "id": "sad-lonely",
+    "name": "비구름몽",
+    "seed": 60400,
+    "body": {
+      "template_id": "tall",
+      "palette_id": "sky",
+      "color": "#A8C8F8"
+    },
+    "expression": {
+      "eyebrow_id": "worried",
+      "eye_id": "teary",
+      "mouth_id": "frown"
+    },
+    "emotion": {
+      "primary": {
+        "key": "sadness",
+        "intensity": 60
+      },
+      "secondary": {
+        "key": "loneliness",
+        "intensity": 40
+      },
+      "detail_state": "hurt_feelings"
+    },
+    "decoration": {
+      "part_id": "rain_cloud",
+      "anchor": "top"
+    },
+    "effect_parts": [],
+    "mutation": {
+      "part_id": null
+    },
+    "description": "처진 눈썹과 눈물, 작은 비구름을 조합"
+  },
+  {
+    "id": "pride-fatigue",
+    "name": "으쓱졸림",
+    "seed": 70300,
+    "body": {
+      "template_id": "low",
+      "palette_id": "yellow",
+      "color": "#F8E078"
+    },
+    "expression": {
+      "eyebrow_id": "confident",
+      "eye_id": "half",
+      "mouth_id": "smirk"
+    },
+    "emotion": {
+      "primary": {
+        "key": "pride",
+        "intensity": 70
+      },
+      "secondary": {
+        "key": "fatigue",
+        "intensity": 30
+      },
+      "detail_state": "satisfaction"
+    },
+    "decoration": {
+      "part_id": "crown",
+      "anchor": "top"
+    },
+    "effect_parts": [
+      "sparkle"
+    ],
+    "mutation": {
+      "part_id": null
+    },
+    "description": "졸린 눈을 유지하면서 자신감 있는 표정과 왕관을 사용"
+  },
+  {
+    "id": "confused-lethargic",
+    "name": "갸웃멍",
+    "seed": 55450,
+    "body": {
+      "template_id": "tall",
+      "palette_id": "lavender",
+      "color": "#D0B0F0"
+    },
+    "expression": {
+      "eyebrow_id": "asymmetric",
+      "eye_id": "mixed",
+      "mouth_id": "flat"
+    },
+    "emotion": {
+      "primary": {
+        "key": "confusion",
+        "intensity": 55
+      },
+      "secondary": {
+        "key": "lethargy",
+        "intensity": 45
+      },
+      "detail_state": "mental_breakdown"
+    },
+    "decoration": {
+      "part_id": "questions",
+      "anchor": "top_sides"
+    },
+    "effect_parts": [],
+    "mutation": {
+      "part_id": "single_spot"
+    },
+    "description": "비대칭 눈썹과 서로 다른 눈, 힘없는 입을 조합"
+  }
+]

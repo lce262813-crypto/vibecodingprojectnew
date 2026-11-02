@@ -1,0 +1,11 @@
+[
+  {
+    "id": "basic",
+    "label": "기본 젤리형",
+    "description": "모든 감정 캐릭터가 공통으로 사용하는 96:64 비율의 둥근 몸통",
+    "design_size": [96, 64],
+    "logical_canvas": 40,
+    "render_canvas": 160,
+    "face_safe_box": [9, 15, 31, 30]
+  }
+]

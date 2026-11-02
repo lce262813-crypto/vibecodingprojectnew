@@ -1,0 +1,1 @@
+"""MOZI backend application package."""

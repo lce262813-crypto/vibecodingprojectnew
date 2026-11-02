@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mozi.local/schemas/character-generation.schema.json",
+  "title": "MOZI Character Generation Prototype",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "seed",
+    "body",
+    "expression",
+    "emotion",
+    "decoration",
+    "effect_parts",
+    "mutation"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 12 },
+    "seed": { "type": "integer", "minimum": 0 },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["template_id", "palette_id", "color"],
+      "properties": {
+        "template_id": { "enum": ["wide", "soft", "low", "tall"] },
+        "palette_id": { "enum": ["yellow", "pink", "coral", "green", "sky", "lavender", "gray", "mint"] },
+        "color": { "type": "string", "pattern": "^#[0-9A-F]{6}$" }
+      }
+    },
+    "expression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow_id", "eye_id", "mouth_id"],
+      "properties": {
+        "eyebrow_id": { "enum": ["angry", "worried", "confident", "asymmetric", "soft"] },
+        "eye_id": { "enum": ["half", "sparkle", "teary", "mixed", "blank"] },
+        "mouth_id": { "enum": ["crooked", "small_smile", "frown", "smirk", "flat"] }
+      }
+    },
+    "emotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "secondary", "detail_state"],
+      "properties": {
+        "primary": { "$ref": "#/$defs/emotionScore" },
+        "secondary": { "$ref": "#/$defs/emotionScore" },
+        "detail_state": {
+          "enum": [
+            "reality_hit", "mental_breakdown", "bothered", "boredom",
+            "unfairness", "hurt_feelings", "jealousy", "regret",
+            "self_blame", "pressure", "impatience", "fear", "frustration",
+            "emptiness", "resignation", "relief", "anticipation", "curiosity",
+            "satisfaction", "confidence"
+          ]
+        }
+      }
+    },
+    "decoration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_id", "anchor"],
+      "properties": {
+        "part_id": { "enum": ["coffee", "hearts", "rain_cloud", "crown", "questions"] },
+        "anchor": { "enum": ["top", "top_sides", "right_hand"] }
+      }
+    },
+    "effect_parts": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "enum": ["sweat", "sparkle"] }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_id"],
+      "properties": {
+        "part_id": { "enum": [null, "single_spot"] }
+      }
+    },
+    "description": { "type": "string", "maxLength": 100 }
+  },
+  "$defs": {
+    "emotionScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "intensity"],
+      "properties": {
+        "key": {
+          "enum": [
+            "joy", "excitement", "calm", "pride", "moved", "sadness",
+            "anger", "irritation", "anxiety", "loneliness", "disappointment",
+            "embarrassment", "confusion", "shyness", "fatigue", "lethargy"
+          ]
+        },
+        "intensity": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    }
+  }
+}
