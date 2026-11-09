@@ -1,5 +1,7 @@
 from datetime import date
 
+from typing import Any
+
 from pydantic import BaseModel, field_validator
 
 from app.schemas.emotions import BaseEmotionKey, EmotionAnalysisResponse
@@ -13,6 +15,8 @@ class CharacterAppearance(BaseModel):
     eye_part: str
     mouth_part: str
     mutation_part: str | None
+    renderer_version: str | None = None
+    render_spec: dict[str, Any] | None = None
 
 
 class CharacterResult(BaseModel):
@@ -36,6 +40,7 @@ class CharacterCard(BaseModel):
     primary_emotion: BaseEmotionKey
     behavior_type: str
     is_resident: bool
+    is_favorite: bool
     encounter_count: int
     first_met_on: date
     last_met_on: date
@@ -48,6 +53,11 @@ class EncounterSummary(BaseModel):
     intensity_level: int
     accessory_part: str | None
     effect_parts: list[str]
+    entry_id: str
+    title: str | None = None
+    primary_emotion: BaseEmotionKey
+    secondary_emotions: list[BaseEmotionKey]
+    display_emotions: list[dict]
 
 
 class CharacterDetail(BaseModel):
@@ -74,3 +84,7 @@ class CharacterNameUpdate(BaseModel):
         if not 1 <= len(name) <= 12:
             raise ValueError("캐릭터 이름은 1~12자로 입력해 주세요.")
         return name
+
+
+class CharacterFavoriteUpdate(BaseModel):
+    is_favorite: bool

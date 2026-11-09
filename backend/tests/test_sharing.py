@@ -16,7 +16,7 @@ def test_owner_creates_reusable_share_link(client: TestClient) -> None:
     assert len(first.json()["token"]) >= 32
 
 
-def test_public_share_exposes_only_character_and_nickname(client: TestClient) -> None:
+def test_public_share_never_exposes_the_diary(client: TestClient) -> None:
     authenticate(client, nickname="자랑꾼")
     character = create_character(client)
     token = client.post(f"/api/characters/{character['character_id']}/share").json()["token"]
@@ -31,12 +31,14 @@ def test_public_share_exposes_only_character_and_nickname(client: TestClient) ->
     body = shared.json()
     assert body["owner_nickname"] == "새닉네임"
     assert body["name"] == "반짝이"
+    assert any(item["key"] == "joy" and item["is_primary"] for item in body["emotions"])
+    assert body["relationship_type"]
     assert set(body) == {
         "owner_nickname", "name", "behavior_type",
-        "accessory_part", "effect_parts", "appearance",
+        "accessory_part", "effect_parts", "appearance", "emotions", "relationship_type",
     }
     serialized = shared.text
-    for private in ("collection@example.com", "친구와", "joy", "met_on", "user_id", "character_id"):
+    for private in ("collection@example.com", "친구와", "met_on", "user_id", "character_id", "diary_text", "evidence"):
         assert private not in serialized
 
 

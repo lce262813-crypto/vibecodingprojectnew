@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.diary_photo import DiaryPhoto
     from app.models.encounter import Encounter
     from app.models.emotion_analysis import EmotionAnalysis
     from app.models.user import User
@@ -19,7 +20,10 @@ def utc_now() -> datetime:
 
 
 class DailyEntryStatus(StrEnum):
+    DRAFT = "draft"
     ANALYZING = "analyzing"
+    AWAITING_CONFIRMATION = "awaiting_confirmation"
+    UNCERTAIN = "uncertain"
     COMPLETED = "completed"
     AI_FAILED = "ai_failed"
     DELETED = "deleted"
@@ -41,8 +45,10 @@ class DailyEntry(Base):
     title: Mapped[str | None] = mapped_column(String(100), nullable=True)
     diary_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
-        String(20), default=DailyEntryStatus.ANALYZING.value, index=True
+        String(30), default=DailyEntryStatus.ANALYZING.value, index=True
     )
+    analysis_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    analysis_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     analysis_mode: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now
@@ -59,5 +65,8 @@ class DailyEntry(Base):
         back_populates="daily_entry", cascade="all, delete-orphan", uselist=False
     )
     encounter: Mapped["Encounter | None"] = relationship(
+        back_populates="daily_entry", cascade="all, delete-orphan", uselist=False
+    )
+    photo: Mapped["DiaryPhoto | None"] = relationship(
         back_populates="daily_entry", cascade="all, delete-orphan", uselist=False
     )

@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { CharacterSprite } from '../characters/CharacterSprite'
-import { getDiaryRecords, type DiaryCalendarRecord } from './diaryApi'
+import { MoziLoadingScreen } from '../components/MoziLoadingScreen'
+import { EMOTION_LABELS } from '../characters/emotionCatalog'
+import {
+  getDiaryRecords,
+  searchDiaryEntries,
+  type DiaryCalendarRecord,
+  type DiarySearchRecord,
+} from './diaryApi'
 
 const weekdays = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -38,6 +45,11 @@ export function DiaryRecordsPage() {
   const [records, setRecords] = useState<DiaryCalendarRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [query, setQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<DiarySearchRecord[] | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
+  const [emotion, setEmotion] = useState('')
+  const [selectedDate, setSelectedDate] = useState('')
   const today = seoulToday()
 
   useEffect(() => {
@@ -55,10 +67,27 @@ export function DiaryRecordsPage() {
     setVisible((current) => moveMonth(current, amount))
   }
 
-  const recordByDate = useMemo(
-    () => new Map(records.map((record) => [record.entry_date, record])),
+  async function handleSearch(event: FormEvent) {
+    event.preventDefault()
+    const normalized = query.trim()
+    if (!normalized && !emotion) { setSearchResults(null); return }
+    setIsSearching(true); setError('')
+    try {
+      const result = await searchDiaryEntries({ query: normalized, emotion })
+      setSearchResults(result.records)
+    } catch { setError('일기 검색에 실패했습니다.') }
+    finally { setIsSearching(false) }
+  }
+
+  const recordsByDate = useMemo(
+    () => records.reduce((map, record) => {
+      const items = map.get(record.entry_date) ?? []
+      items.push(record); map.set(record.entry_date, items)
+      return map
+    }, new Map<string, DiaryCalendarRecord[]>()),
     [records],
   )
+  const selectedRecords = selectedDate ? recordsByDate.get(selectedDate) ?? [] : []
   const firstWeekday = new Date(Date.UTC(visible.year, visible.month - 1, 1)).getUTCDay()
   const daysInMonth = new Date(Date.UTC(visible.year, visible.month, 0)).getUTCDate()
   const cells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => (
@@ -78,6 +107,15 @@ export function DiaryRecordsPage() {
           <Link className="button button--primary" to="/diary">오늘 일기 쓰기</Link>
         </div>
 
+        <form className="diary-search diary-search--expanded mt-6" onSubmit={handleSearch}>
+          <label className="form-field" htmlFor="diary-search"><span>제목과 본문 검색</span><input id="diary-search" maxLength={100} onChange={(event) => setQuery(event.target.value)} placeholder="기억하고 싶은 단어를 입력해 보세요" value={query} /></label>
+          <label className="form-field"><span>주감정</span><select aria-label="일기 감정 필터" onChange={(event) => setEmotion(event.target.value)} value={emotion}><option value="">전체 감정</option>{Object.entries(EMOTION_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+          <button className="button button--secondary" disabled={isSearching || (!query.trim() && !emotion)} type="submit">{isSearching ? '검색 중…' : '검색'}</button>
+          {searchResults !== null && <button className="button button--secondary" onClick={() => { setQuery(''); setEmotion(''); setSearchResults(null) }} type="button">검색 초기화</button>}
+        </form>
+
+        {searchResults !== null && <section className="diary-search-results mt-6" aria-label="일기 검색 결과"><h2 className="text-xl font-black">검색 결과 {searchResults.length}개</h2>{searchResults.length === 0 ? <p className="mt-4 text-stone-500">일치하는 일기가 없어요.</p> : <div className="encounter-list mt-4">{searchResults.map((record) => <Link key={record.entry_id} to={`/diary/entries/${record.entry_id}`}><strong>{record.entry_date} · {record.title || '제목 없는 일기'}</strong><span>{record.primary_emotion ? `${EMOTION_LABELS[record.primary_emotion]} · ` : ''}{record.diary_preview}</span></Link>)}</div>}</section>}
+
         <section className="emotion-calendar mt-7" aria-label={`${visible.year}년 ${visible.month}월 감정 달력`}>
           <header className="emotion-calendar__controls">
             <button aria-label="이전 달" onClick={() => showAdjacentMonth(-1)} type="button">←</button>
@@ -93,11 +131,12 @@ export function DiaryRecordsPage() {
             {cells.map((day, index) => {
               if (day === null) return <span aria-hidden="true" className="calendar-day calendar-day--empty" key={`empty-${index}`} />
               const key = dateKey(visible.year, visible.month, day)
-              const record = recordByDate.get(key)
+              const dayRecords = recordsByDate.get(key) ?? []
+              const record = dayRecords[0]
               const content = (
                 <>
                   <span className="calendar-day__number">{day}</span>
-                  {record && (
+                  {record?.character && (
                     <CharacterSprite
                       accessoryPart={record.character.accessory_part}
                       character={record.character}
@@ -105,21 +144,30 @@ export function DiaryRecordsPage() {
                       size="calendar"
                     />
                   )}
+                  {record && !record.character && <span className="text-xs font-bold text-violet-700">{record.status === 'uncertain' ? '감정 단서 부족' : record.status === 'ai_failed' ? '분석 실패' : '분석 대기'}</span>}
                 </>
               )
               const className = `calendar-day${key === today ? ' calendar-day--today' : ''}${record ? ' calendar-day--recorded' : ''}`
               return record ? (
-                <Link
-                  aria-label={`${key} 일기 보기`}
+                <button
+                  aria-label={`${key} 기록 목록 보기`}
                   className={className}
                   key={key}
-                  to={`/characters/${record.character.character_id}/encounters/${record.character.encounter_id}`}
-                >{content}</Link>
+                  onClick={() => setSelectedDate(key)}
+                  type="button"
+                >{content}{dayRecords.length > 1 && <small>{dayRecords.length}개</small>}</button>
               ) : <span className={className} key={key}>{content}</span>
             })}
           </div>
-          {isLoading && <p className="calendar-loading" role="status">달력을 불러오는 중…</p>}
+          {isLoading && <MoziLoadingScreen variant="compact" label="Calendar records loading" />}
+          {!isLoading && !error && records.length === 0 && (
+            <div className="calendar-empty" role="status">
+              <strong>이 달에는 아직 저장된 일기가 없어요.</strong>
+              <span>기억하고 싶은 날을 골라 첫 기록을 남겨 보세요.</span>
+            </div>
+          )}
         </section>
+        {selectedDate && <section className="date-record-list mt-6" aria-label={`${selectedDate} 기록 목록`}><div className="calendar-heading"><div><p className="eyebrow">선택한 날짜</p><h2 className="text-xl font-black">{selectedDate} 기록</h2></div><button className="button button--secondary" onClick={() => setSelectedDate('')} type="button">닫기</button></div><p className="mt-2 text-sm text-stone-500">MOZI는 현재 날짜별 대표 일기 한 편을 저장해요.</p><div className="encounter-list mt-4">{selectedRecords.map((record) => <Link key={record.entry_id} to={`/diary/entries/${record.entry_id}`}><strong>{record.title || '제목 없는 일기'}</strong><span>일기와 감정 분석 보기 →</span></Link>)}</div></section>}
       </section>
     </main>
   )

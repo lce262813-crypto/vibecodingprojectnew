@@ -34,6 +34,7 @@ htmlcov/
 *.log.*
 tmp/
 temp/
+backend/private_uploads/
 
 # Operating system files
 .DS_Store

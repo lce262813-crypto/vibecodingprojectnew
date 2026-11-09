@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard } from './AuthCard'
 import { signup } from './authApi'
+import { useAuth } from './authContextValue'
 
 export function SignupPage() {
+  const { login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +22,13 @@ export function SignupPage() {
 
     try {
       const result = await signup({ email, password, nickname })
-      navigate('/login', { replace: true, state: { message: result.message } })
+      try {
+        // New members go straight on to the tutorial, which ProtectedRoute opens.
+        await login({ email, password })
+        navigate('/room', { replace: true })
+      } catch {
+        navigate('/login', { replace: true, state: { message: result.message } })
+      }
     } catch (caught) {
       setError(
         caught instanceof ApiError

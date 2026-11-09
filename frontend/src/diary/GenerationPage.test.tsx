@@ -54,10 +54,10 @@ describe('GenerationPage', () => {
 
     expect(await screen.findByText('두근이 등장!')).toBeInTheDocument()
     expect(screen.getByText('도감에 자동으로 저장되었어요')).toBeInTheDocument()
-    const sprite = screen.getByRole('img', { name: '두근이 생성 캐릭터' })
-    expect(sprite.querySelector('img')).toHaveAttribute('src', '/assets/character-prototype/bodies/basic.png')
-    expect(sprite.querySelector('[src$="/decorations/hearts.png"]')).toBeInTheDocument()
-    expect(screen.getByText('60%')).toBeInTheDocument()
+    const sprite = screen.getByRole('img', { name: '두근이 character' })
+    expect(sprite).toBeInstanceOf(HTMLCanvasElement)
+    expect(sprite.closest('[data-character-source]')).toHaveAttribute('data-character-source', 'soft-friend-legacy')
+    expect(screen.queryByText('60%')).not.toBeInTheDocument()
     expect(screen.getByText('기쁨과 설렘이 함께 나타났어요.')).toBeInTheDocument()
   })
 
@@ -85,10 +85,10 @@ describe('GenerationPage', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(await screen.findByText('데모 분석 결과')).toBeInTheDocument()
-    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 
-  it('can replace a completed demo result with a live result', async () => {
+  it('preserves completed demo results without a regenerate action', async () => {
     const demo = {
       status: 'completed', entry_date: '2026-11-02', entry_id: 'entry-1',
       diary_text: '오늘 너무 졸리다.',
@@ -116,10 +116,8 @@ describe('GenerationPage', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     render(<MemoryRouter><GenerationPage /></MemoryRouter>)
-    fireEvent.click(await screen.findByRole('button', { name: '실제 AI로 다시 분석하기' }))
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
-    expect(await screen.findByText('85%')).toBeInTheDocument()
-    expect(screen.queryByText('데모 분석 결과')).not.toBeInTheDocument()
+    expect(await screen.findByText('데모 분석 결과')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '실제 AI로 다시 분석하기' })).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

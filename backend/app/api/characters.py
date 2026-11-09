@@ -4,6 +4,7 @@ from app.api.dependencies import CurrentUser, DatabaseSession
 from app.schemas.characters import (
     CharacterCard,
     CharacterDetail,
+    CharacterFavoriteUpdate,
     CharacterNameUpdate,
     EncounterDetail,
 )
@@ -47,6 +48,20 @@ def update_character_name(
 ) -> CharacterDetail:
     character = require_character(db, user, character_id)
     character.name = payload.name
+    db.commit()
+    db.refresh(character)
+    return detail_for(character)
+
+
+@router.patch("/{character_id}/favorite", response_model=CharacterDetail)
+def update_character_favorite(
+    character_id: str,
+    payload: CharacterFavoriteUpdate,
+    user: CurrentUser,
+    db: DatabaseSession,
+) -> CharacterDetail:
+    character = require_character(db, user, character_id)
+    character.is_favorite = payload.is_favorite
     db.commit()
     db.refresh(character)
     return detail_for(character)

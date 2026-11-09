@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -28,6 +28,16 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     nickname: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     coins: Mapped[int] = mapped_column(Integer, default=0)
+    avatar_file: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    representative_character_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    theme: Mapped[str] = mapped_column(String(20), default="cream")
+    notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    notification_time: Mapped[str] = mapped_column(String(5), default="21:00")
+    room_background: Mapped[str] = mapped_column(String(20), default="cream")
+    tutorial_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    tutorial_step: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now
     )

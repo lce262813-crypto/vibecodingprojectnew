@@ -47,9 +47,9 @@ describe('EncounterDetailPage', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByRole('img', { name: '졸린이 생성 캐릭터' })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: '졸린이 character' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '너무 졸린 날' })).toBeInTheDocument()
     expect(screen.getByText('오늘 너무 졸린 것 같다. 너무 졸리다.')).toBeInTheDocument()
-    expect(screen.getByText('85%')).toBeInTheDocument()
+    expect(screen.queryByText('85%')).not.toBeInTheDocument()
   })
 })

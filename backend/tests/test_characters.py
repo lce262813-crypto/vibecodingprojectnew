@@ -1,4 +1,8 @@
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+
+from app.models import EmotionAnalysis, Encounter
+from tests.review_helpers import confirm_entry
 
 
 def authenticate(
@@ -25,7 +29,7 @@ def create_character(client: TestClient) -> dict:
         },
     )
     assert response.status_code == 201
-    return response.json()["character"]
+    return confirm_entry(client, response.json()).json()["character"]
 
 
 def test_collection_detail_name_and_encounter_flow(client: TestClient) -> None:
@@ -38,8 +42,11 @@ def test_collection_detail_name_and_encounter_flow(client: TestClient) -> None:
     assert collection.status_code == 200
     assert len(collection.json()) == 1
     assert collection.json()[0]["encounter_count"] == 1
+    assert collection.json()[0]["is_favorite"] is False
     assert detail.status_code == 200
     assert detail.json()["encounters"][0]["encounter_id"] == result["encounter_id"]
+    assert detail.json()["encounters"][0]["entry_id"]
+    assert detail.json()["encounters"][0]["display_emotions"]
 
     renamed = client.patch(
         f"/api/characters/{result['character_id']}/name",
@@ -70,6 +77,24 @@ def test_other_user_cannot_access_private_character(client: TestClient) -> None:
     assert client.patch(
         f"/api/characters/{result['character_id']}/name", json={"name": "침입"}
     ).status_code == 404
+    assert client.patch(
+        f"/api/characters/{result['character_id']}/favorite",
+        json={"is_favorite": True},
+    ).status_code == 404
+
+
+def test_favorite_persists_in_collection(client: TestClient) -> None:
+    authenticate(client)
+    result = create_character(client)
+
+    updated = client.patch(
+        f"/api/characters/{result['character_id']}/favorite",
+        json={"is_favorite": True},
+    )
+
+    assert updated.status_code == 200
+    assert updated.json()["character"]["is_favorite"] is True
+    assert client.get("/api/characters").json()[0]["is_favorite"] is True
 
 
 def test_deleting_last_encounter_keeps_daily_tombstone(client: TestClient) -> None:
@@ -106,3 +131,20 @@ def test_character_name_length_is_validated(client: TestClient) -> None:
     assert client.patch(
         f"/api/characters/{result['character_id']}/name", json={"name": "가" * 13}
     ).status_code == 422
+
+
+def test_item_comes_from_the_saved_analysis_without_changing_the_record(client: TestClient, db_session) -> None:
+    authenticate(client)
+    character_id = create_character(client)["character_id"]
+    analysis = db_session.scalar(select(EmotionAnalysis))
+    encounter = db_session.scalar(select(Encounter))
+    analysis.objects = ["맥주"]
+    db_session.commit()
+
+    detail = client.get(f"/api/characters/{character_id}").json()
+    assert detail["encounters"][0]["accessory_part"] == "beer"
+    assert detail["character"]["appearance"]["render_spec"]["decoration_id"] == "beer"
+    assert client.get("/api/characters").json()[0]["appearance"]["render_spec"]["decoration_id"] == "beer"
+
+    db_session.refresh(encounter)
+    assert encounter.accessory_part is None

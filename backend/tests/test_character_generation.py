@@ -4,7 +4,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.constants.characters import (
+    ALGORITHM_VERSION,
     BODY_PARTS,
+    EMOTION_SILHOUETTES,
     EXPRESSION_RECIPES,
     MUTATION_PARTS,
     PALETTE_COLORS,
@@ -49,6 +51,8 @@ def test_intensity_boundaries() -> None:
 def test_all_sixteen_emotions_have_expression_recipes() -> None:
     assert set(EXPRESSION_RECIPES) == set(BaseEmotionKey)
     assert all(len(recipe) == 3 for recipe in EXPRESSION_RECIPES.values())
+    assert set(EMOTION_SILHOUETTES) == set(BaseEmotionKey)
+    assert set(EMOTION_SILHOUETTES.values()) == set(BODY_PARTS)
 
 
 def test_same_fingerprint_reuses_character_but_adds_encounter(
@@ -56,7 +60,7 @@ def test_same_fingerprint_reuses_character_but_adds_encounter(
     fake_analyzer: FakeEmotionAnalyzer,
 ) -> None:
     user = make_user(db_session, "same@example.com", "같은친구")
-    payload = fake_analyzer.analyze("충분히 긴 테스트 일기입니다.")
+    payload = fake_analyzer.legacy_analyze("충분히 긴 테스트 일기입니다.")
     first_entry = make_entry(db_session, user, date(2026, 11, 1))
     second_entry = make_entry(db_session, user, date(2026, 11, 2))
 
@@ -72,6 +76,8 @@ def test_same_fingerprint_reuses_character_but_adds_encounter(
     assert second_is_new is False
     assert first_character.id == second_character.id
     assert first_encounter.id != second_encounter.id
+    assert first_encounter.accessory_part is None
+    assert first_character.render_spec["decoration_id"] is None
     assert db_session.scalar(select(func.count()).select_from(Character)) == 1
     assert db_session.scalar(select(func.count()).select_from(Encounter)) == 2
 
@@ -79,7 +85,7 @@ def test_same_fingerprint_reuses_character_but_adds_encounter(
 def test_keyword_accessory_does_not_change_fingerprint(
     fake_analyzer: FakeEmotionAnalyzer,
 ) -> None:
-    payload = fake_analyzer.analyze("충분히 긴 테스트 일기입니다.")
+    payload = fake_analyzer.legacy_analyze("충분히 긴 테스트 일기입니다.")
     changed_keyword = payload.model_copy(
         update={
             "keywords": [
@@ -94,7 +100,7 @@ def test_different_users_receive_different_deterministic_appearance(
     db_session: Session,
     fake_analyzer: FakeEmotionAnalyzer,
 ) -> None:
-    payload = fake_analyzer.analyze("충분히 긴 테스트 일기입니다.")
+    payload = fake_analyzer.legacy_analyze("충분히 긴 테스트 일기입니다.")
     first_user = make_user(db_session, "first@example.com", "첫친구")
     second_user = make_user(db_session, "second@example.com", "둘친구")
     first, _, _ = create_character_encounter(
@@ -108,6 +114,12 @@ def test_different_users_receive_different_deterministic_appearance(
     assert first.body_part in BODY_PARTS
     assert first.palette in PALETTE_COLORS
     assert first.mutation_part is None or first.mutation_part in MUTATION_PARTS
+    assert first.algorithm_version == ALGORITHM_VERSION
+    assert first.render_spec is not None
+    assert first.render_spec["renderer_version"] == "human-v1"
+    assert first.render_spec["silhouette_id"] == EMOTION_SILHOUETTES[payload.primary_emotion]
+    assert first.render_spec["seed"] == int(first.seed[:8], 16)
+    assert first.render_spec["animal_feature_id"] is None
 
 
 def test_deleting_one_of_multiple_encounters_keeps_character(
@@ -115,7 +127,7 @@ def test_deleting_one_of_multiple_encounters_keeps_character(
     fake_analyzer: FakeEmotionAnalyzer,
 ) -> None:
     user = make_user(db_session, "history@example.com", "기록친구")
-    payload = fake_analyzer.analyze("충분히 긴 테스트 일기입니다.")
+    payload = fake_analyzer.legacy_analyze("충분히 긴 테스트 일기입니다.")
     first_entry = make_entry(db_session, user, date(2026, 11, 1))
     second_entry = make_entry(db_session, user, date(2026, 11, 2))
     save_analysis(db_session, first_entry, payload, "demo")

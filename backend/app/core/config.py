@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-6-luna"
     ai_analysis_mode: str = "live"
+    demo_account_email: str = "presentation@mozi-demo.com"
+    media_root: str = ""
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
@@ -30,6 +32,12 @@ class Settings(BaseSettings):
             return self.database_url.strip()
         local_database = (PROJECT_ROOT / "backend" / "mozi.db").as_posix()
         return f"sqlite+pysqlite:///{local_database}"
+
+    @property
+    def effective_media_root(self) -> Path:
+        if self.media_root.strip():
+            return Path(self.media_root).expanduser().resolve()
+        return (PROJECT_ROOT / "backend" / "private_uploads").resolve()
 
 
 @lru_cache

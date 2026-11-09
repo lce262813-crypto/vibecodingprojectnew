@@ -5,6 +5,7 @@ import { CoinIcon } from '../components/CoinIcon'
 import { RoomBackdrop } from '../room/RoomBackdrop'
 import { useRoomWeather } from '../weather/roomWeather'
 import { getShop, placedFurniture, purchaseItem, setItemPlacement, type ShopItem, type ShopState } from './shopApi'
+import { PageLoader } from '../components/PageLoader'
 
 export function ShopPage() {
   const [shop, setShop] = useState<ShopState | null>(null)
@@ -91,6 +92,7 @@ export function ShopPage() {
         {error && <p className="form-error mt-4" role="alert">{error}</p>}
         {message && <p className="form-success mt-4" role="status">{message}</p>}
 
+        {!shop && !error && <PageLoader label="상점 문을 여는 중…" />}
         {shop && (
           <>
             <div className="emotion-room shop-preview" aria-label="지금 나의 감정 방">

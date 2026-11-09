@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { ApiError } from '../api/client'
 import { createShareLink, revokeShareLink, shareUrlFor } from './sharingApi'
 
 interface ShareControlsProps {
@@ -13,15 +14,30 @@ export function ShareControls({ characterId, characterName }: ShareControlsProps
   const [error, setError] = useState('')
   const [isBusy, setIsBusy] = useState(false)
 
+  // Opens the phone's own share sheet. Browsers without it keep the link panel below.
+  async function showShareSheet(link: string) {
+    if (typeof navigator.share !== 'function') return
+    try {
+      await navigator.share({ title: `MOZI · ${characterName}`, text: `내 감정 몬스터 ${characterName}를 구경해 봐!`, url: link })
+    } catch (caught) {
+      // Closing the sheet is a normal choice. Anything else is usually iOS refusing because the
+      // tap has expired while the link was loading, and a fresh tap on 공유하기 will work.
+      if ((caught as { name?: string } | null)?.name !== 'AbortError') setMessage('아래 공유하기를 한 번 더 눌러 주세요.')
+    }
+  }
+
   async function openShare() {
     setIsBusy(true); setError(''); setMessage('')
+    let link = ''
     try {
-      setUrl(shareUrlFor(await createShareLink(characterId)))
-    } catch {
-      setError('자랑하기 링크를 만들지 못했어요. 잠시 후 다시 시도해 주세요.')
+      link = shareUrlFor(await createShareLink(characterId))
+      setUrl(link)
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : '자랑하기 링크를 만들지 못했어요. 서버 연결을 확인하고 다시 시도해 주세요.')
     } finally {
       setIsBusy(false)
     }
+    if (link) await showShareSheet(link)
   }
 
   async function copyLink() {
@@ -33,22 +49,14 @@ export function ShareControls({ characterId, characterName }: ShareControlsProps
     }
   }
 
-  async function nativeShare() {
-    try {
-      await navigator.share({ title: `MOZI · ${characterName}`, text: `내 감정 몬스터 ${characterName}를 구경해 봐!`, url })
-    } catch {
-      // The user closed the share sheet; nothing to do.
-    }
-  }
-
   async function stopSharing() {
     setIsBusy(true); setError('')
     try {
       await revokeShareLink(characterId)
       setUrl('')
       setMessage('공유를 멈췄어요. 이전 링크로는 더 이상 볼 수 없어요.')
-    } catch {
-      setError('공유를 멈추지 못했어요.')
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : '공유를 멈추지 못했어요. 서버 연결을 확인해 주세요.')
     } finally {
       setIsBusy(false)
     }
@@ -67,13 +75,13 @@ export function ShareControls({ characterId, characterName }: ShareControlsProps
           <div className="share-controls__actions">
             <button className="button button--primary" onClick={() => void copyLink()} type="button">링크 복사</button>
             {typeof navigator.share === 'function' && (
-              <button className="button button--secondary" onClick={() => void nativeShare()} type="button">공유하기</button>
+              <button className="button button--secondary" onClick={() => { setMessage(''); void showShareSheet(url) }} type="button">공유하기</button>
             )}
             <button className="button button--secondary" disabled={isBusy} onClick={() => void stopSharing()} type="button">공유 멈추기</button>
           </div>
         </>
       )}
-      <p className="share-controls__notice">일기와 감정 기록은 공유되지 않고, 캐릭터와 닉네임만 보여요.</p>
+      <p className="share-controls__notice">일기 내용은 공유되지 않아요. 캐릭터와 닉네임, 감정, 소품이 보여요.</p>
       {message && <p className="form-success mt-3" role="status">{message}</p>}
       {error && <p className="form-error mt-3" role="alert">{error}</p>}
     </section>

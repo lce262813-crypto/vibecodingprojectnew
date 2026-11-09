@@ -9,6 +9,8 @@ import {
   retryTodayAnalysis,
   type TodayDiary,
 } from './diaryApi'
+import { EmotionAnalysisPanel } from './EmotionAnalysisPanel'
+import { PageLoader } from '../components/PageLoader'
 
 export function GenerationPage() {
   const [today, setToday] = useState<TodayDiary | null>(null)
@@ -34,8 +36,14 @@ export function GenerationPage() {
     }
   }, [])
 
-  if (isLoading) {
-    return <p className="p-8 text-center text-stone-600">오늘의 기록을 확인하는 중…</p>
+  useEffect(() => {
+    if (today?.status !== 'analyzing') return
+    const timer = window.setTimeout(() => { getTodayDiary().then(setToday).catch(() => setError('상태를 확인하지 못했어요. 새로고침해 주세요.')) }, 2500)
+    return () => window.clearTimeout(timer)
+  }, [today])
+
+  if (isLoading || isRetrying || today?.status === 'analyzing') {
+    return <PageLoader label="오늘의 마음을 읽어오는 중..." />
   }
 
   if (today?.status === 'not_started') {
@@ -61,17 +69,7 @@ export function GenerationPage() {
     }
   }
 
-  if (today?.status === 'analyzing') {
-    return (
-      <main className="grid min-h-screen place-items-center px-5 py-10">
-        <section className="panel max-w-xl text-center" aria-live="polite">
-          <div className="analysis-orb" aria-hidden="true">✦</div>
-          <h1 className="mt-7 text-3xl font-black text-stone-900">오늘의 감정을 살펴보고 있어요</h1>
-          <p className="mt-4 text-stone-600">잠시만 기다려 주세요.</p>
-        </section>
-      </main>
-    )
-  }
+
 
   if (today?.status === 'ai_failed') {
     return (
@@ -127,7 +125,7 @@ export function GenerationPage() {
           {character?.is_new_character ? '새로운 감정 몬스터 탄생' : '다시 만난 감정 몬스터'}
         </p>
         <h1 className="mt-3 text-3xl font-black text-stone-900">
-          {character ? `${character.name} 등장!` : 'AI가 오늘의 일기를 이렇게 해석했어요'}
+          {character ? `${character.name} 등장!` : today?.status === 'uncertain' ? '오늘의 감정을 읽기 어려웠어요' : 'AI가 오늘의 일기를 이렇게 해석했어요'}
         </h1>
         {character && (
           <>
@@ -135,38 +133,13 @@ export function GenerationPage() {
             <p className="collection-notice mt-4">도감에 자동으로 저장되었어요</p>
           </>
         )}
-        {analysis?.analysis_mode === 'demo' && (
-          <>
-            <span className="demo-badge mt-4">데모 분석 결과</span>
-            <button
-              className="button button--primary mt-4"
-              disabled={isRetrying}
-              onClick={() => void runRecovery('retry')}
-              type="button"
-            >
-              {isRetrying ? '실제 AI로 분석 중…' : '실제 AI로 다시 분석하기'}
-            </button>
-          </>
-        )}
+        {analysis?.analysis_mode === 'demo' && <span className="demo-badge mt-4">데모 분석 결과</span>}
         {analysis && (
-          <>
-            <div className="emotion-results mt-7" aria-label="주요 감정 분석 결과">
-              {analysis.display_emotions.map((emotion) => (
-                <article className="emotion-result" key={emotion.key}>
-                  <strong>{emotion.label}</strong>
-                  <span>{emotion.percentage}%</span>
-                  <div className="emotion-meter" aria-hidden="true">
-                    <i style={{ width: `${emotion.percentage}%` }} />
-                  </div>
-                </article>
-              ))}
-            </div>
-            <p className="analysis-summary mt-6">{analysis.event_summary}</p>
-          </>
+          <EmotionAnalysisPanel analysis={analysis} />
         )}
         {!character && (
           <p className="mt-6 text-sm leading-6 text-stone-500">
-            기존 분석 기록에는 캐릭터가 없을 수 있어요.
+            {today?.status === 'uncertain' ? '감정을 짐작해서 만들지 않았어요. 다음 기록에 당시 마음을 조금 더 적어주면 다시 살펴볼게요.' : '이전 분석 기록에는 캐릭터가 없을 수 있어요.'}
           </p>
         )}
         {error && <p className="form-error mt-5" role="alert">{error}</p>}

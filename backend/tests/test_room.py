@@ -100,6 +100,7 @@ def test_move_in_is_idempotent(client: TestClient, db_session: Session) -> None:
 
     assert first.json()["count"] == 1
     assert second.json()["count"] == 1
+    assert client.get("/api/room/residents").json()["count"] == 1
 
 
 def test_user_cannot_move_in_another_users_character(

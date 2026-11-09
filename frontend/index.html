@@ -3,15 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/mozi-icon-32.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f6f3fa" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
       content="일기 속 감정이 나만의 픽셀 캐릭터가 되는 감정 기록 서비스 MOZI"
     />
     <title>MOZI - 오늘의 감정 몬스터</title>
+    <style>
+      .boot-screen { position: fixed; inset: 0; display: grid; place-items: center; background: #f6f3fa; color: #3b2a63; font-family: system-ui, sans-serif; text-align: center; }
+      .boot-content { display: flex; width: min(90vw, 27rem); flex-direction: column; align-items: center; gap: .6rem; }
+      .boot-stage { position: relative; display: grid; width: min(84vw, 22rem); height: clamp(8rem, 25vh, 13rem); place-items: center; }
+      .boot-brand { position: relative; z-index: 1; width: min(76%, 17rem); height: auto; animation: boot-bob 1.2s steps(2,end) infinite; }
+      .boot-star { position: absolute; width: 4px; height: 4px; background: #8b6bc8; box-shadow: 0 -8px #8b6bc8, 0 8px #8b6bc8, -8px 0 #8b6bc8, 8px 0 #8b6bc8; animation: boot-twinkle 1.2s steps(2,end) infinite; }
+      .boot-star:nth-child(1) { top: 20%; left: 15%; }
+      .boot-star:nth-child(2) { top: 40%; left: 5%; transform: scale(.6); animation-delay: .24s; }
+      .boot-star:nth-child(3) { top: 22%; right: 14%; transform: scale(.6); animation-delay: .42s; }
+      .boot-star:nth-child(4) { top: 48%; right: 3%; animation-delay: .18s; }
+      .boot-title { margin: .25rem 0 0; font-size: 1.4rem; font-weight: 900; }
+      .boot-message { margin: 0; color: #786b91; }
+      .boot-dots { display: flex; gap: .45rem; margin-top: .5rem; }
+      .boot-dots i { width: .55rem; height: .55rem; border: 1px solid #5b3fa3; background: #cbb9ef; animation: boot-dot 1s steps(1,end) infinite; }
+      .boot-dots i:nth-child(2) { animation-delay: .18s; }
+      .boot-dots i:nth-child(3) { animation-delay: .36s; }
+      @keyframes boot-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+      @keyframes boot-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+      @keyframes boot-dot { 0%,100% { background: #cbb9ef; opacity: .35; } 50% { background: #5b3fa3; opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .boot-brand, .boot-star, .boot-dots i { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot-screen"><div class="boot-content"><div class="boot-stage"><b class="boot-star"></b><b class="boot-star"></b><b class="boot-star"></b><b class="boot-star"></b><img class="boot-brand" alt="MOZI." src="/brand/mozi-logo.svg" /></div><h1 class="boot-title">잠시만 기다려 주세요!</h1><p class="boot-message">MOZI가 열심히 준비하고 있어요...</p><div class="boot-dots" aria-hidden="true"><i></i><i></i><i></i></div></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

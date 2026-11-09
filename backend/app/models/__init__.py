@@ -2,6 +2,7 @@ from app.models.auth_session import AuthSession
 from app.models.character import Character
 from app.models.character_share import CharacterShare
 from app.models.daily_entry import DailyEntry, DailyEntryStatus
+from app.models.diary_photo import DiaryPhoto
 from app.models.encounter import Encounter
 from app.models.emotion_analysis import EmotionAnalysis
 from app.models.owned_furniture import OwnedFurniture
@@ -13,6 +14,7 @@ __all__ = [
     "CharacterShare",
     "DailyEntry",
     "DailyEntryStatus",
+    "DiaryPhoto",
     "EmotionAnalysis",
     "Encounter",
     "OwnedFurniture",

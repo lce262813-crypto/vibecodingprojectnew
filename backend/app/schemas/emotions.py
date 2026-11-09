@@ -96,14 +96,21 @@ class KeywordResult(BaseModel):
 class EmotionAnalysisPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: int = Field(default=1, ge=1, le=1)
+    schema_version: int = Field(default=2, ge=1, le=2)
     base_emotions: BaseEmotionScores
     primary_emotion: BaseEmotionKey
-    secondary_emotions: list[BaseEmotionKey] = Field(max_length=2)
+    secondary_emotions: list[BaseEmotionKey] = Field(max_length=1)
+    primary_ratio: int | None = Field(default=None, ge=0, le=100)
+    secondary_ratio: int | None = Field(default=None, ge=0, le=100)
     detail_states: list[DetailStateResult] = Field(max_length=3)
     energy: int = Field(ge=0, le=100)
     keywords: list[KeywordResult] = Field(max_length=5)
     event_summary: str = Field(min_length=1, max_length=200)
+    reason: str | None = Field(default=None, min_length=1, max_length=500)
+    events: list[str] = Field(default_factory=list, max_length=5)
+    objects: list[str] = Field(default_factory=list, max_length=8)
+    confidence: int = Field(default=50, ge=0, le=100)
+    uncertainty_note: str | None = Field(default=None, max_length=300)
 
     @field_validator("secondary_emotions")
     @classmethod
@@ -131,25 +138,93 @@ class EmotionAnalysisPayload(BaseModel):
 
         scores = self.base_emotions.model_dump()
         primary_score = scores[self.primary_emotion.value]
-        if primary_score < max(scores.values()):
-            raise ValueError("주요 감정은 가장 높은 기본 감정 점수여야 합니다.")
+
+        if self.secondary_emotions:
+            secondary = self.secondary_emotions[0]
+            secondary_score = scores[secondary.value]
+            total = primary_score + secondary_score
+            derived_primary = round(primary_score / total * 100) if total else 50
+            primary_ratio = self.primary_ratio if self.primary_ratio is not None else derived_primary
+            secondary_ratio = (
+                self.secondary_ratio
+                if self.secondary_ratio is not None
+                else 100 - primary_ratio
+            )
+            if primary_ratio + secondary_ratio != 100:
+                raise ValueError("주요 감정과 보조 감정의 비중 합은 100이어야 합니다.")
+        else:
+            primary_ratio = 100 if self.primary_ratio is None else self.primary_ratio
+            secondary_ratio = 0 if self.secondary_ratio is None else self.secondary_ratio
+            if primary_ratio != 100 or secondary_ratio != 0:
+                raise ValueError("보조 감정이 없으면 주요 감정 비중은 100이어야 합니다.")
+
+        object.__setattr__(self, "primary_ratio", primary_ratio)
+        object.__setattr__(self, "secondary_ratio", secondary_ratio)
+        if self.reason is None:
+            object.__setattr__(self, "reason", self.event_summary)
+        if self.confidence < 50 and not self.uncertainty_note:
+            object.__setattr__(
+                self,
+                "uncertainty_note",
+                "감정 표현이 뚜렷하지 않아 분석 결과가 불확실할 수 있어요.",
+            )
         return self
 
 
 class DisplayEmotion(BaseModel):
     key: BaseEmotionKey
     label: str
-    percentage: int = Field(ge=0, le=100)
+    percentage: int | None = Field(default=None, ge=0, le=100)
+    intensity: int | None = Field(default=None, ge=1, le=5)
 
 
 class EmotionAnalysisResponse(BaseModel):
     schema_version: int
     base_emotions: dict[str, int]
-    primary_emotion: BaseEmotionKey
+    primary_emotion: BaseEmotionKey | None
     secondary_emotions: list[BaseEmotionKey]
+    primary_ratio: int | None
+    secondary_ratio: int | None
+    primary_intensity: int
+    secondary_intensity: int
     detail_states: list[DetailStateResult]
     energy: int
     keywords: list[KeywordResult]
     event_summary: str
+    reason: str
+    events: list[str]
+    objects: list[str]
+    confidence: int
+    uncertainty_note: str | None
     display_emotions: list[DisplayEmotion]
     analysis_mode: str
+    provider: str | None = None
+    model_name: str | None = None
+    prompt_version: str | None = None
+    is_user_edited: bool = False
+    review: dict | None = None
+    review_revision: int = 0
+    ai_original: dict | None = None
+
+
+class EmotionAnalysisUpdateRequest(BaseModel):
+    primary_emotion: BaseEmotionKey
+    secondary_emotion: BaseEmotionKey | None = None
+    primary_ratio: int = Field(ge=1, le=100)
+    secondary_ratio: int = Field(ge=0, le=99)
+    primary_intensity: int = Field(ge=0, le=100)
+    secondary_intensity: int = Field(ge=0, le=100)
+
+    @model_validator(mode="after")
+    def validate_update(self) -> "EmotionAnalysisUpdateRequest":
+        if self.secondary_emotion is None:
+            if self.primary_ratio != 100 or self.secondary_ratio != 0:
+                raise ValueError("보조 감정이 없으면 주요 감정 비중은 100이어야 합니다.")
+            if self.secondary_intensity != 0:
+                raise ValueError("보조 감정이 없으면 보조 감정 강도는 0이어야 합니다.")
+        else:
+            if self.secondary_emotion == self.primary_emotion:
+                raise ValueError("주요 감정과 보조 감정은 서로 달라야 합니다.")
+            if self.primary_ratio + self.secondary_ratio != 100:
+                raise ValueError("주요 감정과 보조 감정의 비중 합은 100이어야 합니다.")
+        return self

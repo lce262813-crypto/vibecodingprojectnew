@@ -1,5 +1,5 @@
 import { apiRequest } from '../api/client'
-import type { CharacterAppearance } from '../characters/charactersApi'
+import type { CharacterSpriteData } from '../characters/CharacterSprite'
 
 export interface ShareLink {
   token: string
@@ -12,7 +12,14 @@ export interface PublicSharedCharacter {
   behavior_type: string
   accessory_part: string | null
   effect_parts: string[]
-  appearance: CharacterAppearance
+  appearance: CharacterSpriteData['appearance']
+  emotions?: Array<{
+    key: string
+    label: string
+    intensity: number | null
+    is_primary: boolean
+  }>
+  relationship_type?: string | null
 }
 
 export const createShareLink = (characterId: string) =>

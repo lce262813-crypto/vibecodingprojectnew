@@ -48,7 +48,14 @@ class FakeEmotionAnalyzer:
         self.should_fail = False
         self.calls = 0
 
-    def analyze(self, diary_text: str) -> EmotionAnalysisPayload:
+    def analyze(self, diary_text: str):
+        self.calls += 1
+        if self.should_fail:
+            raise EmotionAnalysisError("fake analysis failure")
+        from app.services.evidence_demo import analyze_evidence_demo
+        return analyze_evidence_demo(diary_text)
+
+    def legacy_analyze(self, diary_text: str) -> EmotionAnalysisPayload:
         self.calls += 1
         if self.should_fail:
             raise EmotionAnalysisError("fake analysis failure")
@@ -72,13 +79,19 @@ class FakeEmotionAnalyzer:
                 lethargy=3,
             ),
             primary_emotion=BaseEmotionKey.JOY,
-            secondary_emotions=[BaseEmotionKey.EXCITEMENT, BaseEmotionKey.ANXIETY],
+            secondary_emotions=[BaseEmotionKey.EXCITEMENT],
+            primary_ratio=60,
+            secondary_ratio=40,
             detail_states=[
                 DetailStateResult(key=DetailStateKey.ANTICIPATION, confidence=72)
             ],
             energy=68,
             keywords=[KeywordResult(text="친구", category=KeywordCategory.SOCIAL)],
             event_summary="친구와의 즐거운 시간에서 기쁨과 설렘을 느낌",
+            reason="친구와 즐거웠다는 표현과 설렘을 나타내는 문장이 함께 있어요.",
+            events=["친구와 즐거운 시간"],
+            objects=[],
+            confidence=86,
         )
 
 

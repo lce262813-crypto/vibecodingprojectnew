@@ -17,7 +17,7 @@ describe('DiaryRecordsPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('shows a saved character on its date and links to the stored encounter', async () => {
+  it('shows a saved character and opens the date record list', async () => {
     const now = new Date()
     const year = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(now))
     const month = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', month: 'numeric' }).format(now))
@@ -41,11 +41,12 @@ describe('DiaryRecordsPage', () => {
 
     render(<MemoryRouter><DiaryRecordsPage /></MemoryRouter>)
 
-    const recordLink = await screen.findByRole('link', { name: `${entryDate} 일기 보기` })
-    expect(recordLink).toHaveAttribute('href', '/characters/character-1/encounters/encounter-1')
-    expect(recordLink).toHaveTextContent(String(day))
-    expect(screen.getByRole('img', { name: '꾸벅이 생성 캐릭터' })).toBeInTheDocument()
+    const recordButton = await screen.findByRole('button', { name: `${entryDate} 기록 목록 보기` })
+    expect(recordButton).toHaveTextContent(String(day))
+    expect(screen.getByRole('img', { name: '꾸벅이 character' })).toBeInTheDocument()
     expect(screen.queryByText('산책한 날')).not.toBeInTheDocument()
+    fireEvent.click(recordButton)
+    expect(screen.getByRole('link', { name: /산책한 날/ })).toHaveAttribute('href', '/diary/entries/entry-1')
   })
 
   it('requests the previous month when its control is selected', async () => {
@@ -57,5 +58,22 @@ describe('DiaryRecordsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '이전 달' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/api\/diary\/records\?year=\d+&month=\d+/)
+  })
+
+  it('sends date and emotion filters without requiring a text query', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(calendarResponse(2026, 11))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ query: '', records: [] }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<MemoryRouter><DiaryRecordsPage /></MemoryRouter>)
+    await screen.findByRole('heading', { name: /년 \d+월/ })
+
+    fireEvent.change(screen.getByLabelText('일기 감정 필터'), { target: { value: 'joy' } })
+    fireEvent.click(screen.getByRole('button', { name: '검색' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(String(fetchMock.mock.calls[1][0])).toContain('emotion=joy')
   })
 })

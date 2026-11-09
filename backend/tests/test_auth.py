@@ -117,3 +117,82 @@ def test_nickname_update_requires_auth_and_enforces_uniqueness(
     assert updated.status_code == 200
     assert updated.json()["nickname"] == "새이름"
     assert client.get("/api/auth/me").json()["nickname"] == "새이름"
+
+
+def test_account_export_excludes_credentials_and_account_can_be_deleted(
+    client: TestClient,
+) -> None:
+    signup(client)
+    login(client)
+    client.post(
+        "/api/diary/today",
+        json={"title": "내보낼 일기", "diary_text": "내 데이터 내보내기를 검증하는 충분히 긴 일기다."},
+    )
+
+    exported = client.get("/api/account/export")
+    assert exported.status_code == 200
+    assert exported.json()["profile"]["email"] == SIGNUP_PAYLOAD["email"]
+    assert exported.json()["diaries"][0]["title"] == "내보낼 일기"
+    assert "password" not in str(exported.json()).lower()
+
+    wrong = client.request(
+        "DELETE", "/api/account", json={"password": "wrong-password"}
+    )
+    assert wrong.status_code == 403
+    deleted = client.request(
+        "DELETE", "/api/account", json={"password": SIGNUP_PAYLOAD["password"]}
+    )
+    assert deleted.status_code == 204
+    assert client.get("/api/auth/me").status_code == 401
+    assert login(client).status_code == 401
+
+
+def sign_in(client: TestClient):
+    return client.post(
+        "/api/auth/login",
+        json={"email": SIGNUP_PAYLOAD["email"], "password": SIGNUP_PAYLOAD["password"]},
+    )
+
+
+def test_new_account_starts_the_tutorial_and_resumes_after_logging_in_again(client: TestClient) -> None:
+    signup(client)
+    first = sign_in(client).json()
+    assert first["tutorial_completed"] is False
+    assert first["tutorial_step"] == 0
+
+    assert client.put("/api/auth/tutorial/step", json={"step": 2}).json()["tutorial_step"] == 2
+    client.post("/api/auth/logout")
+
+    resumed = sign_in(client).json()
+    assert resumed["tutorial_completed"] is False
+    assert resumed["tutorial_step"] == 2
+
+
+def test_tutorial_step_must_be_one_of_the_five_steps(client: TestClient) -> None:
+    signup(client)
+    sign_in(client)
+
+    assert client.put("/api/auth/tutorial/step", json={"step": 5}).status_code == 422
+    assert client.put("/api/auth/tutorial/step", json={"step": -1}).status_code == 422
+
+
+def test_finished_tutorial_stays_finished_on_any_session_without_coins(
+    client: TestClient, db_session: Session
+) -> None:
+    signup(client)
+    sign_in(client)
+
+    assert client.post("/api/auth/tutorial/complete").json()["tutorial_completed"] is True
+    client.post("/api/auth/logout")
+
+    # A later login stands in for another device: the state comes from the account.
+    assert sign_in(client).json()["tutorial_completed"] is True
+    assert client.post("/api/auth/tutorial/complete").status_code == 200
+    user = db_session.scalar(select(User).where(User.email == SIGNUP_PAYLOAD["email"]))
+    assert user is not None
+    assert user.coins == 0
+
+
+def test_tutorial_requires_login(client: TestClient) -> None:
+    assert client.post("/api/auth/tutorial/complete").status_code == 401
+    assert client.put("/api/auth/tutorial/step", json={"step": 1}).status_code == 401

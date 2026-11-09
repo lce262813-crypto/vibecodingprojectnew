@@ -1,8 +1,8 @@
 from app.schemas.emotions import BaseEmotionKey, DetailStateKey, KeywordCategory
 
-ALGORITHM_VERSION = "v4"
+ALGORITHM_VERSION = "human-v1"
 
-BODY_PARTS = ("basic",)
+BODY_PARTS = ("round", "heart", "flat", "wave", "spiky", "drop")
 MUTATION_PARTS = ("single_spot",)
 
 PALETTE_COLORS = {
@@ -33,6 +33,27 @@ EMOTION_PALETTES = {
     BaseEmotionKey.SHYNESS: ("rose", "peach", "lavender"),
     BaseEmotionKey.FATIGUE: ("slate", "sky", "lavender"),
     BaseEmotionKey.LETHARGY: ("slate", "mint", "sky"),
+}
+
+# Phase 3의 6개 감정 그룹은 자동 생성 시 아래 고정 실루엣을 사용한다.
+# 기존 프론트엔드 마스크는 삭제하지 않고 개발용 검수 화면에서 계속 보존한다.
+EMOTION_SILHOUETTES = {
+    BaseEmotionKey.JOY: "round",
+    BaseEmotionKey.PRIDE: "round",
+    BaseEmotionKey.MOVED: "round",
+    BaseEmotionKey.EXCITEMENT: "heart",
+    BaseEmotionKey.SHYNESS: "heart",
+    BaseEmotionKey.CALM: "flat",
+    BaseEmotionKey.FATIGUE: "flat",
+    BaseEmotionKey.LETHARGY: "flat",
+    BaseEmotionKey.SADNESS: "wave",
+    BaseEmotionKey.LONELINESS: "wave",
+    BaseEmotionKey.DISAPPOINTMENT: "wave",
+    BaseEmotionKey.ANGER: "spiky",
+    BaseEmotionKey.IRRITATION: "spiky",
+    BaseEmotionKey.ANXIETY: "drop",
+    BaseEmotionKey.EMBARRASSMENT: "drop",
+    BaseEmotionKey.CONFUSION: "drop",
 }
 
 # 모든 기본 감정은 전용 표정 조합을 가진다.
@@ -77,33 +98,33 @@ BEHAVIOR_TYPES = {
 ACCESSORY_PARTS = {
     KeywordCategory.WORK: "briefcase",
     KeywordCategory.STUDY: "book",
-    KeywordCategory.DRINK: "cup",
+    KeywordCategory.DRINK: "coffee",
     KeywordCategory.SOCIAL: "heart",
-    KeywordCategory.NATURE: "leaf",
+    KeywordCategory.NATURE: "flower",
     KeywordCategory.TRAVEL: "bag",
-    KeywordCategory.HEALTH: "bandage",
+    KeywordCategory.HEALTH: "medicine",
     KeywordCategory.HOBBY: "gamepad",
-    KeywordCategory.FOOD: "snack",
-    KeywordCategory.DAILY: "sparkle",
+    KeywordCategory.FOOD: "meal",
+    KeywordCategory.DAILY: None,
 }
 
 EMOTION_EFFECTS = {
-    BaseEmotionKey.JOY: "sparkles",
-    BaseEmotionKey.EXCITEMENT: "hearts",
-    BaseEmotionKey.CALM: "music",
-    BaseEmotionKey.PRIDE: "crown_glow",
-    BaseEmotionKey.MOVED: "tear_glow",
-    BaseEmotionKey.SADNESS: "tears",
+    BaseEmotionKey.JOY: "starlight",
+    BaseEmotionKey.EXCITEMENT: "heart",
+    BaseEmotionKey.CALM: "wind",
+    BaseEmotionKey.PRIDE: "medal",
+    BaseEmotionKey.MOVED: "shining_tear",
+    BaseEmotionKey.SADNESS: "rain",
     BaseEmotionKey.ANGER: "flame",
-    BaseEmotionKey.IRRITATION: "anger_mark",
-    BaseEmotionKey.ANXIETY: "sweat",
-    BaseEmotionKey.LONELINESS: "small_cloud",
-    BaseEmotionKey.DISAPPOINTMENT: "gloom",
-    BaseEmotionKey.EMBARRASSMENT: "sweat",
-    BaseEmotionKey.CONFUSION: "question",
+    BaseEmotionKey.IRRITATION: "nerve_line",
+    BaseEmotionKey.ANXIETY: "tremble",
+    BaseEmotionKey.LONELINESS: "crescent",
+    BaseEmotionKey.DISAPPOINTMENT: "fading_star",
+    BaseEmotionKey.EMBARRASSMENT: "exclamation",
+    BaseEmotionKey.CONFUSION: "spiral",
     BaseEmotionKey.SHYNESS: "blush",
-    BaseEmotionKey.FATIGUE: "sleep",
-    BaseEmotionKey.LETHARGY: "gloom",
+    BaseEmotionKey.FATIGUE: "zzz",
+    BaseEmotionKey.LETHARGY: "empty_battery",
 }
 
 DETAIL_EFFECTS = {

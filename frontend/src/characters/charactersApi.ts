@@ -1,5 +1,5 @@
 import { apiRequest } from '../api/client'
-import type { CharacterResult, EmotionAnalysis } from '../diary/diaryApi'
+import type { CharacterRenderSpec, CharacterResult, EmotionAnalysis } from '../diary/diaryApi'
 
 export interface CharacterAppearance {
   body_part: string
@@ -9,6 +9,8 @@ export interface CharacterAppearance {
   eye_part: string
   mouth_part: string
   mutation_part: string | null
+  renderer_version?: string | null
+  render_spec?: CharacterRenderSpec | null
 }
 
 export interface CharacterCard {
@@ -17,6 +19,7 @@ export interface CharacterCard {
   primary_emotion: string
   behavior_type: string
   is_resident: boolean
+  is_favorite: boolean
   encounter_count: number
   first_met_on: string
   last_met_on: string
@@ -29,6 +32,11 @@ export interface EncounterSummary {
   intensity_level: number
   accessory_part: string | null
   effect_parts: string[]
+  entry_id: string
+  title: string | null
+  primary_emotion: string
+  secondary_emotions: string[]
+  display_emotions: Array<{ key: string; label: string; percentage: number }>
 }
 
 export interface CharacterDetail {
@@ -51,6 +59,10 @@ export const getCharacter = (id: string) =>
 export const renameCharacter = (id: string, name: string) =>
   apiRequest<CharacterDetail>(`/api/characters/${id}/name`, {
     method: 'PATCH', body: JSON.stringify({ name }),
+  })
+export const setCharacterFavorite = (id: string, isFavorite: boolean) =>
+  apiRequest<CharacterDetail>(`/api/characters/${id}/favorite`, {
+    method: 'PATCH', body: JSON.stringify({ is_favorite: isFavorite }),
   })
 export const getEncounter = (characterId: string, encounterId: string) =>
   apiRequest<EncounterDetail>(`/api/characters/${characterId}/encounters/${encounterId}`)

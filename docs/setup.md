@@ -272,3 +272,20 @@ Phase 6은 완료되었다. 다음 작업은 최대 5마리 입주, 감정별 �
 - 프론트엔드 린트와 프로덕션 빌드가 통과했다.
 
 Phase 7은 완료되었다. 다음 작업은 일기와 감정 정보를 노출하지 않는 캐릭터 공유 링크를 구현하는 Phase 8이다.
+
+### ngrok으로 보기 (와이파이 밖, https)
+
+1. https://ngrok.com 에 가입하고 ngrok을 설치한 뒤, 대시보드에 나온 authtoken을 한 번 등록한다. 토큰은 코드나 문서에 적지 않는다.
+   ```powershell
+   winget install ngrok.ngrok
+   ngrok config add-authtoken <대시보드의 토큰>
+   ```
+2. 백엔드(`--port 8000`)와 프론트엔드(`npm.cmd run dev`)를 평소처럼 켠다.
+3. 새 터미널에서 프론트엔드만 터널로 연다.
+   ```powershell
+   ngrok http 5173
+   ```
+4. `Forwarding`에 나온 `https://….ngrok-free.app` 주소를 휴대폰 등에서 연다. 처음 한 번 나오는 ngrok 안내 화면에서 `Visit Site`를 누른다.
+
+- ngrok 주소로 열면 프론트엔드가 `/api` 요청을 Vite 프록시(`vite.config.ts`)로 로컬 백엔드에 넘기므로 터널은 5173 하나만 있으면 된다.
+- 주소를 아는 사람은 누구나 접속할 수 있으니 확인이 끝나면 `Ctrl + C`로 터널을 닫는다.

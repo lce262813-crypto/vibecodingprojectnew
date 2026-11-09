@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -38,7 +38,9 @@ class Character(Base):
     mouth_part: Mapped[str] = mapped_column(String(30))
     mutation_part: Mapped[str | None] = mapped_column(String(30), nullable=True)
     behavior_type: Mapped[str] = mapped_column(String(30))
+    render_spec: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_resident: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now

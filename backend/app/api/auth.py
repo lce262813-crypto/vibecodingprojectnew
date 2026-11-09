@@ -9,6 +9,7 @@ from app.schemas.auth import (
     LoginRequest,
     MessageResponse,
     SignupRequest,
+    TutorialStepRequest,
     UserResponse,
 )
 from app.services.auth import (
@@ -17,6 +18,7 @@ from app.services.auth import (
     find_user_by_email,
     find_user_by_nickname,
     issue_session,
+    user_response,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -62,12 +64,32 @@ def login(payload: LoginRequest, response: Response, db: DatabaseSession) -> Use
         samesite="lax",
         path="/",
     )
-    return UserResponse.model_validate(user)
+    return user_response(user)
 
 
 @router.get("/me", response_model=UserResponse)
 def current_user(user: CurrentUser) -> UserResponse:
-    return UserResponse.model_validate(user)
+    return user_response(user)
+
+
+@router.put("/tutorial/step", response_model=UserResponse)
+def save_tutorial_step(
+    payload: TutorialStepRequest, user: CurrentUser, db: DatabaseSession
+) -> UserResponse:
+    """Remember where a new member stopped so the next login resumes there."""
+    if user.tutorial_completed_at is None:
+        user.tutorial_step = payload.step
+        db.commit()
+    return user_response(user)
+
+
+@router.post("/tutorial/complete", response_model=UserResponse)
+def complete_tutorial(user: CurrentUser, db: DatabaseSession) -> UserResponse:
+    """Finish the tutorial for this account. It grants nothing, so replays cannot reward twice."""
+    if user.tutorial_completed_at is None:
+        user.tutorial_completed_at = datetime.now(timezone.utc)
+        db.commit()
+    return user_response(user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

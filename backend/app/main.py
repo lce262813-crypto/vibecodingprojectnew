@@ -7,6 +7,7 @@ from app.api.characters import router as characters_router
 from app.api.diary import router as diary_router
 from app.api.health import router as health_router
 from app.api.room import router as room_router
+from app.api.reports import router as reports_router
 from app.api.shares import router as shares_router
 from app.api.shop import router as shop_router
 from app.core.config import get_settings
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(diary_router)
     app.include_router(characters_router)
     app.include_router(room_router)
+    app.include_router(reports_router)
     app.include_router(shares_router)
     app.include_router(shop_router)
     return app

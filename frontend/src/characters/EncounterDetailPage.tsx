@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { CharacterSprite } from './CharacterSprite'
 import { deleteEncounter, getEncounter, type EncounterDetail } from './charactersApi'
+import { EmotionAnalysisPanel } from '../diary/EmotionAnalysisPanel'
+import { PageLoader } from '../components/PageLoader'
 
 export function EncounterDetailPage() {
   const { characterId = '', encounterId = '' } = useParams()
@@ -37,7 +39,7 @@ export function EncounterDetailPage() {
     <main className="min-h-screen px-5 py-8">
       <section className="panel mx-auto max-w-2xl">
         <Link className="text-sm font-bold text-violet-700" to="/diary/records">← 감정 달력으로</Link>
-        {isLoading && <p className="mt-8 text-center text-stone-500">만남 기록을 불러오는 중…</p>}
+        {isLoading && <PageLoader label="만남 기록을 불러오는 중…" />}
         {error && <p className="form-error mt-5" role="alert">{error}</p>}
         {detail && (
           <>
@@ -52,12 +54,7 @@ export function EncounterDetailPage() {
               <h1>{detail.character.name}</h1>
               <p>{detail.character.feature_description}</p>
             </section>
-            <h2 className="mt-8 text-xl font-black">그날의 주요 감정</h2>
-            <div className="emotion-results mt-4">
-              {detail.analysis.display_emotions.map((emotion) => (
-                <article className="emotion-result" key={emotion.key}><strong>{emotion.label}</strong><span>{emotion.percentage}%</span><div className="emotion-meter"><i style={{ width: `${emotion.percentage}%` }} /></div></article>
-              ))}
-            </div>
+            <EmotionAnalysisPanel analysis={detail.analysis} />
             <section className="encounter-diary mt-9">
               <p className="eyebrow">오늘의 일기</p>
               <h2>{detail.title || '제목 없는 일기'}</h2>
